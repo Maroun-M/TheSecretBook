@@ -1,51 +1,76 @@
 import 'package:flutter/material.dart';
 
 class RecipeDetailsPage extends StatelessWidget {
-  final String title;
-  final String description;
-  final String image;
-  final List<String> ingredients;
+  final Map<String, dynamic> recipe;
 
   RecipeDetailsPage({
-    required this.title,
-    required this.description,
-    required this.image,
-    required this.ingredients,
+    required this.recipe,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(recipe['title'] ?? ''),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset(
-              image,
-              width: 200.0,
-              height: 200.0,
-              fit: BoxFit.cover,
+            Container(
+              width: double.infinity,
+              height: 300.0, // Adjust the height as needed
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(recipe['image'] ?? ''),
+                  fit: BoxFit.cover,
+                ),
+                borderRadius: BorderRadius.circular(12.0), // Adjust the border radius as needed
+              ),
             ),
             SizedBox(height: 16.0),
             Text(
-              description,
-              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+              recipe['title'] ?? '',
+              style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16.0),
+            Text(
+              'Description:',
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              recipe['description'] ?? '',
+              style: TextStyle(fontSize: 18.0),
+            ),
+            SizedBox(height: 16.0),
+            Text(
+              'Category:',
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              recipe['category'] ?? '',
+              style: TextStyle(fontSize: 18.0),
             ),
             SizedBox(height: 16.0),
             Text(
               'Ingredients:',
-              style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: ingredients
-                  .map((ingredient) => Text('- $ingredient'))
-                  .toList(),
+              children: (recipe['ingredients'] as List<dynamic>?)
+                  ?.map(
+                    (ingredient) => Text(
+                  '- ${ingredient['name']} - ${ingredient['quantity']}',
+                  style: TextStyle(fontSize: 18.0),
+                ),
+              )
+                  .toList() ??
+                  [],
             ),
           ],
         ),

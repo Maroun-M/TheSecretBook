@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login.dart';
 import 'add_recipe.dart';
 import 'recipe_details.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RecipeHomePage extends StatefulWidget {
   @override
@@ -13,6 +14,7 @@ class RecipeHomePage extends StatefulWidget {
 
 class _RecipeHomePageState extends State<RecipeHomePage> {
   List<Map<String, dynamic>> recipes = [];
+  List<Map<String, dynamic>> filteredRecipes = [];
   bool isLoggedIn = false;
 
   @override
@@ -41,6 +43,7 @@ class _RecipeHomePageState extends State<RecipeHomePage> {
         if (jsonResponse is List) {
           setState(() {
             recipes = jsonResponse.cast<Map<String, dynamic>>();
+            filteredRecipes = recipes;
           });
         } else {
           print('Invalid JSON format. Expected a List, but received: $jsonResponse');
@@ -53,6 +56,14 @@ class _RecipeHomePageState extends State<RecipeHomePage> {
     }
   }
 
+  void filterRecipes(String query) {
+    setState(() {
+      filteredRecipes = recipes
+          .where((recipe) => recipe['title'].toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,9 +72,11 @@ class _RecipeHomePageState extends State<RecipeHomePage> {
       ),
       body: Column(
         children: [
+
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
+              onChanged: (query) => filterRecipes(query),
               decoration: InputDecoration(
                 hintText: 'Search for recipes...',
                 prefixIcon: Icon(Icons.search),
@@ -72,15 +85,10 @@ class _RecipeHomePageState extends State<RecipeHomePage> {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: recipes.length,
+              itemCount: filteredRecipes.length,
               itemBuilder: (context, index) {
                 return RecipeCard(
-                  title: recipes[index]['title']!,
-                  description: recipes[index]['description']!,
-                  image: recipes[index]['image']!,
-                  ingredients: recipes[index]['ingredients'] != null
-                      ? List<String>.from(recipes[index]['ingredients'])
-                      : [],
+                  recipe: filteredRecipes[index],
                 );
               },
             ),
@@ -106,7 +114,8 @@ class _RecipeHomePageState extends State<RecipeHomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => AddRecipeScreen()),
+                      builder: (context) => AddRecipeScreen(),
+                    ),
                   ).then((value) {
                     if (value != null && value) {
                       fetchRecipes(); // Refresh recipes after adding a new one
@@ -130,7 +139,8 @@ class _RecipeHomePageState extends State<RecipeHomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => LoginScreen()),
+                      builder: (context) => LoginScreen(),
+                    ),
                   ).then((value) {
                     setState(() {
                       isLoggedIn = value ?? false;
@@ -151,16 +161,10 @@ class _RecipeHomePageState extends State<RecipeHomePage> {
 }
 
 class RecipeCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final String image;
-  final List<String> ingredients;
+  final Map<String, dynamic> recipe;
 
   RecipeCard({
-    required this.title,
-    required this.description,
-    required this.image,
-    required this.ingredients,
+    required this.recipe,
   });
 
   @override
@@ -174,10 +178,7 @@ class RecipeCard extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => RecipeDetailsPage(
-                title: title,
-                description: description,
-                image: image,
-                ingredients: ingredients,
+                recipe: recipe,
               ),
             ),
           );
@@ -187,14 +188,19 @@ class RecipeCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 80.0,
-                height: 80.0,
+                width: 120.0,
+                height: 120.0,
                 decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(image),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: CachedNetworkImage(
+                    imageUrl: recipe['image'],
+                    width: 120.0,
+                    height: 120.0,
                     fit: BoxFit.cover,
                   ),
-                  borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
               SizedBox(width: 16.0),
@@ -203,16 +209,21 @@ class RecipeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      recipe['title'] ?? '',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18.0,
                       ),
                     ),
-                    SizedBox(height: 35.0),
+                    SizedBox(height: 10.0),
                     Text(
-                      description,
+                      recipe['description'] ?? '',
                       style: TextStyle(fontSize: 14.0),
+                    ),
+                    SizedBox(height: 10.0),
+                    Text(
+                      'Category: ${recipe['category'] ?? ''}',
+                      style: TextStyle(fontSize: 14.0, color: Colors.grey),
                     ),
                   ],
                 ),
